@@ -1,32 +1,24 @@
-﻿using System;
-using sudoku.Utils;
+﻿using sudoku.Utils;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
-namespace sudoku.Classes
+namespace sudoku.Classes.SolvingTools
 {
-    public class Solver
+    internal class MatrixTool : ISuperTool
     {
         private int[,,] Matrix { get; set; }
-        private int RowLenght { get; set; }
+        private int RowLength { get; set; }
         private int QuadSize { get; set; }
 
-        public Solver(int[,] matrix)
+        public MatrixTool(int[,] matrix)
         {
-            SetMatrixFrom2D(matrix);
-            RowLenght = Convert.ToInt32(Math.Cbrt(Matrix.Length));
-            QuadSize = Convert.ToInt32(Math.Sqrt(RowLenght));
+            Matrix = Transpose(matrix);
+            RowLength = Convert.ToInt32(Math.Cbrt(Matrix.Length));
+            QuadSize = Convert.ToInt32(Math.Sqrt(RowLength));
         }
 
         #region public methods
-
-        public void SetMatrixFrom2D(int[,] matrix)
-        {
-            Matrix = MatrixHelper.Transpose(matrix);
-        }
-
-        public int[,] GetMatrixAs2D()
-        {
-            return MatrixHelper.Transpose(Matrix);
-        }
 
         public int[,] SolveSudoku()
         {
@@ -34,9 +26,9 @@ namespace sudoku.Classes
             int sec = Matrix.Length;
             do
             {
-                for (int y = 0; y < RowLenght; y++)
+                for (int y = 0; y < RowLength; y++)
                 {
-                    for (int x = 0; x < RowLenght; x++)
+                    for (int x = 0; x < RowLength; x++)
                     {
                         Matrix = SetCellByRow(Matrix, x, y);
                         Matrix = SetCellByCol(Matrix, x, y);
@@ -51,9 +43,9 @@ namespace sudoku.Classes
                             Matrix = CheckQuad(Matrix, q * QuadSize, y);
                         }
                     }
-                    if (y == RowLenght - 1)
+                    if (y == RowLength - 1)
                     {
-                        for (int i = 0; i < RowLenght; i++)
+                        for (int i = 0; i < RowLength; i++)
                         {
                             Matrix = CheckCol(Matrix, i);
                         }
@@ -62,17 +54,16 @@ namespace sudoku.Classes
                 sec--;
             } while (!IsSolved() && sec != 0);
 
-            return GetMatrixAs2D();
+            return Transpose(Matrix);
         }
 
-        //Returns true if the Sudoku is solved (if every cell has a number)
         public bool IsSolved()
         {
-            for (int y = 0; y < RowLenght; y++)
+            for (int y = 0; y < RowLength; y++)
             {
-                for (int x = 0; x < RowLenght; x++)
+                for (int x = 0; x < RowLength; x++)
                 {
-                    if (MatrixHelper.GetCell(Matrix, x, y) <= 0) return false;
+                    if (GetCell(Matrix, x, y) <= 0) return false;
                 }
             }
             return true;
@@ -197,7 +188,7 @@ namespace sudoku.Classes
                         }
                     }
                 }
-                if (count == 1)  mat = SetNumber(mat, singleX, singleY, n);
+                if (count == 1) mat = SetNumber(mat, singleX, singleY, n);
             }
             return mat;
         }
@@ -227,11 +218,69 @@ namespace sudoku.Classes
         {
             c = c.HasValue ? c : x;
             i = i.HasValue ? i : y;
-            int checker = MatrixHelper.GetCell(mat, (int)c, (int)i);
+            int checker = GetCell(mat, (int)c, (int)i);
             if (checker > 0) mat[x, y, checker - 1] = 0;
         }
 
-        #endregion
+        //Cell Checking --
+        //If a cell has only one possible, returns that number
+        //If not, returns 0
+        //If it has 0 possibles (error) returns -1
+        private int GetCell(int[,,] mat, int x, int y)
+        {
+            int result = 0;
+            int count = 0;
+            for (int z = 0; z < Math.Cbrt(mat.Length); z++)
+            {
+                if (mat[x, y, z] != 0)
+                {
+                    result = z;
+                    count++;
+                }
+            }
+            return (count == 0) ? -1 : (count == 1) ? result + 1 : 0;
+        }
 
+        //Translates a 2d matrix to a 3d matrix
+        // (1,4 = 7) = (1,4 = [0,0,0,0,0,0,1,0,0)
+        // (1,4 = 0) = (1,4 = [1,1,1,1,1,1,1,1,1])
+        private int[,,] Transpose(int[,] matrix)
+        {
+            int[,,] blue = new int[Convert.ToInt32(Math.Sqrt(matrix.Length)), Convert.ToInt32(Math.Sqrt(matrix.Length)), Convert.ToInt32(Math.Sqrt(matrix.Length))];
+            for (int y = 0; y < Math.Sqrt(matrix.Length); y++)
+            {
+                for (int x = 0; x < Math.Sqrt(matrix.Length); x++)
+                {
+                    if (matrix[x, y] != 0)
+                    {
+                        blue[x, y, matrix[x, y] - 1] = 1;
+                    }
+                    else
+                    {
+                        for (int z = 0; z < Math.Sqrt(matrix.Length); z++)
+                        {
+                            blue[x, y, z] = 1;
+                        }
+                    }
+                }
+            }
+            return blue;
+        }
+
+        //This one re-translates 3d info to a 2d matrix
+        private int[,] Transpose(int[,,] matrix)
+        {
+            int[,] blue = new int[Convert.ToInt32(Math.Cbrt(matrix.Length)), Convert.ToInt32(Math.Cbrt(matrix.Length))];
+            for (int x = 0; x < Math.Cbrt(matrix.Length); x++)
+            {
+                for (int y = 0; y < Math.Cbrt(matrix.Length); y++)
+                {
+                    blue[x, y] = GetCell(matrix, x, y);
+                }
+            }
+            return blue;
+        }
+
+        #endregion
     }
 }

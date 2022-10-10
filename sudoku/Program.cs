@@ -1,5 +1,7 @@
 ﻿using System;
 using sudoku.Classes;
+using sudoku.Classes.SolvingTools;
+using sudoku.Enums;
 using sudoku.Utils;
 
 namespace sudoku
@@ -18,13 +20,19 @@ namespace sudoku
                 Grid grid = new Grid(size, true);
                 grid.ReadInput();
 
+                ISuperTool tool;
+                switch(Settings.TOOL)
+                {
+                    case ToolEnum.Tools.MatrixTool:
+                        tool = new MatrixTool(grid.Matrix);
+                        break;
+                }
+
                 var watch = System.Diagnostics.Stopwatch.StartNew();
-                Solver sudoku = new Solver(grid.Matrix);
-                sudoku.SolveSudoku();
-                grid.Matrix = sudoku.GetMatrixAs2D();
+                grid.Matrix = tool.SolveSudoku();
                 grid.Print();
 
-                if (sudoku.IsSolved()) { Console.WriteLine("Sudoku completed!"); }
+                if (tool.IsSolved()) { Console.WriteLine("Sudoku completed!"); }
                 else { Console.WriteLine("This sudoku is impossible or has multiple solutions"); }
                 watch.Stop();
                 if (Settings.DEV_MODE) Console.WriteLine("this sudoku took " + watch.ElapsedMilliseconds + "ms to be solved");
