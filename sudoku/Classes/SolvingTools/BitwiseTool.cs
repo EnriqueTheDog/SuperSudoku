@@ -8,86 +8,110 @@ namespace sudoku.Classes.SolvingTools
     internal class BitwiseTool : ISuperTool
     {
         private int[,] Sudoku { get; set; }
-        private int[,] Solution { get; set; }
+        private int[,] SudokuBits { get; set; }
         private int RowLength { get; set; }
         private Dictionary<int, int> BitValues { get; set; }
         private int MaxValue { get; set; }
+        private int QuadSize { get; set; }
 
         public BitwiseTool(int[,] sudoku)
         {
             Sudoku = sudoku;
             RowLength = Convert.ToInt32(Math.Sqrt(Sudoku.Length));
-        }
-
-        public bool IsSolved()
-        {
-            throw new NotImplementedException();
-        }
-
-        public int[,] SolveSudoku()
-        {
-            int cont = 0;
-            int sec = Sudoku.Length;
-            do
-            {
-                for (int y = 0; y < RowLength; y++)
-                {
-                    for (int x = 0; x < RowLength; x++)
-                    {
-                        Solution = SetCellByRow(Solution, x, y);
-                        Solution = SetCellByCol(Solution, x, y);
-                        Solution = SetCellByQuad(Solution, x, y);
-                    }
-                    cont++;
-                    Solution = CheckRow(Solution, y);
-                    if (cont % QuadSize == 0)
-                    {
-                        for (int q = 0; q < QuadSize; q++)
-                        {
-                            Solution = CheckQuad(Solution, q * QuadSize, y);
-                        }
-                    }
-                    if (y == RowLength - 1)
-                    {
-                        for (int i = 0; i < RowLength; i++)
-                        {
-                            Solution = CheckCol(Solution, i);
-                        }
-                    }
-                }
-                sec--;
-            } while (!IsSolved() && sec != 0);
-
-            return Transpose(Solution);
-        }
-
-        #region private methods
-
-        private void SetBitValues()
-        {
-            BitValues = new Dictionary<int, int>();
-            int v = 1;
-            for (int k = 1; k <= RowLength; k++)
-            {
-                BitValues.Add(k, v);
-                v *= 2;
-            }
-
+            QuadSize = Convert.ToInt32(Math.Sqrt(RowLength));
+            BitValues = GetBitValues();
             foreach (int val in BitValues.Values)
             {
                 MaxValue += val;
             }
         }
 
-        // Transforms the numeric values array into a "bitwise" array
-        private void Transpose()
+        public bool IsSolved()
+        {
+            for (int y = 0; y < RowLength; y++)
+            {
+                for (int x = 0; x < RowLength; x++)
+                {
+                    if (GetCell(SudokuBits[x, y]) <= 0) return false;
+                }
+            }
+            return true;
+        }
+
+        public int[,] SolveSudoku()
+        {
+            int cont = 0;
+            int sec = Sudoku.Length;
+            SudokuIntToBit();
+            do
+            {
+                for (int y = 0; y < RowLength; y++)
+                {
+                    for (int x = 0; x < RowLength; x++)
+                    {
+                        SudokuBits = SetCellByRow(SudokuBits, x, y);
+                        SudokuBits = SetCellByCol(SudokuBits, x, y);
+                        SudokuBits = SetCellByQuad(SudokuBits, x, y);
+                    }
+                    cont++;
+                    SudokuBits = CheckRow(SudokuBits, y);
+                    if (cont % QuadSize == 0)
+                    {
+                        for (int q = 0; q < QuadSize; q++)
+                        {
+                            SudokuBits = CheckQuad(SudokuBits, q * QuadSize, y);
+                        }
+                    }
+                    if (y == RowLength - 1)
+                    {
+                        for (int i = 0; i < RowLength; i++)
+                        {
+                            SudokuBits = CheckCol(SudokuBits, i);
+                        }
+                    }
+                }
+                sec--;
+            } while (!IsSolved() && sec != 0);
+
+            SudokuBitToInt();
+            return Sudoku;
+        }
+
+        #region private methods
+
+        private Dictionary<int, int> GetBitValues()
+        {
+            Dictionary<int, int>  bitValues = new Dictionary<int, int>();
+            int v = 1;
+            for (int k = 1; k <= RowLength; k++)
+            {
+                bitValues.Add(k, v);
+                v *= 2;
+            }
+
+            return bitValues;
+        }
+
+        private void SudokuIntToBit()
+        {
+            SudokuBits = new int[RowLength, RowLength];
+            for (int x = 0; x < RowLength; x++)
+            {
+                for (int y = 0; y < RowLength; y++)
+                {
+                    if (Sudoku[x, y] != 0) SudokuBits[x, y] = BitValues[Sudoku[x, y]];
+                    else SudokuBits[x, y] = MaxValue;
+                }
+            }
+        }
+
+        private void SudokuBitToInt()
         {
             for (int x = 0; x < RowLength; x++)
             {
                 for (int y = 0; y < RowLength; y++)
                 {
-                    if (Sudoku[x, y] != 0) Solution[x, y] = BitValues[Sudoku[x, y]];
-                    else Solution[x, y] = MaxValue;
+                    Sudoku[x, y] = GetCell(SudokuBits[x, y]);
                 }
             }
         }
@@ -98,18 +122,101 @@ namespace sudoku.Classes.SolvingTools
         {
             for (int c = 0; c < RowLength; c++)
             {
-                if (c != x) ChangeCell(ref mat, x, y, c, null);
+                if (c != x) ChangeCell(ref mat, x, y, c);
             }
             return mat;
         }
 
-        // TODO!
-        private void ChangeCell(ref int[,] mat, int x, int y, int? c, int? i)
+        private int[,] SetCellByCol(int[,] mat, int x, int y)
+        {
+            for (int i = 0; i < RowLength; i++)
+            {
+                if (i != y) ChangeCell(ref mat, x, y, null, i);
+            }
+            return mat;
+        }
+        private int[,] SetCellByQuad(int[,] mat, int x, int y)
+        {
+            int quadX = x / QuadSize * QuadSize;
+            int quadY = y / QuadSize * QuadSize;
+
+            for (int c = quadX; c < quadX + QuadSize; c++)
+            {
+                for (int i = quadY; i < quadY + QuadSize; i++)
+                {
+                    if (i != y || c != x) ChangeCell(ref mat, x, y, c, i);
+                }
+            }
+            return mat;
+        }
+
+        // Can we get any better than this O(n^2) ? Rethink
+        private int[,] CheckRow(int[,] mat, int y)
+        {
+            for (int n = 0; n < RowLength; n++)
+            {
+                int possibleCellsForN = 0;
+                for (int c = 0; c < RowLength; c++)
+                {
+                    if (BitValues.Values.Contains(mat[c, y] & BitValues[n + 1])) possibleCellsForN |= BitValues[c + 1];
+                }
+                int result = GetCell(possibleCellsForN) - 1;
+                if (result >= 0) mat[result, y] = BitValues[n + 1];
+            }
+            return mat;
+        }
+
+        private int[,] CheckCol(int[,] mat, int x)
+        {
+            for (int n = 0; n < RowLength; n++)
+            {
+                int possibleCellsForN = 0;
+                for (int i = 0; i < RowLength; i++)
+                {
+                    if (BitValues.Values.Contains(mat[x, i] & BitValues[n + 1])) possibleCellsForN |= BitValues[i + 1];
+                }
+                int result = GetCell(possibleCellsForN) - 1;
+                if (result >= 0) mat[x, result] = BitValues[n + 1];
+            }
+            return mat;
+        }
+
+        private int[,] CheckQuad(int[,] mat, int x, int y)
+        {
+            int quadX = x / QuadSize * QuadSize;
+            int quadY = y / QuadSize * QuadSize;
+
+            for (int n = 1; n <= RowLength; n++)
+            {
+                int singleX = 0;
+                int singleY = 0;
+                int count = 0;
+                for (int c = quadX; c < quadX + QuadSize; c++)
+                {
+                    for (int i = quadY; i < quadY + QuadSize; i++)
+                    {
+                        if (BitValues.Values.Contains(mat[c, i] & BitValues[n])) // This could be != 0
+                        {
+                            singleX = c;
+                            singleY = i;
+                            count++;
+                        }
+                        if (count > 1) break;
+                    }
+                    if (count > 1) break;
+                }
+                if (count == 1) mat[singleX, singleY] = BitValues[n];
+            }
+            return mat;
+        }
+
+        private void ChangeCell(ref int[,] mat, int x, int y, int? c = null, int? i = null)
         {
             c = c.HasValue ? c : x;
             i = i.HasValue ? i : y;
-            //int checker = GetCell(mat, (int)c, (int)i);
-            //if (checker > 0) mat[x, y, checker - 1] = 0;
+            int targetVal = mat[(int)c, (int)i];
+            if (BitValues.Values.Contains(targetVal) && BitValues.Values.Contains(mat[x, y] & targetVal))
+                mat[x, y] ^= targetVal;
         }
 
         //Cell Checking --

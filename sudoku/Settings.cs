@@ -6,10 +6,9 @@ using System.Text;
 
 namespace sudoku
 {
-    static class Settings
+    public static class Settings
     {
-        public const bool DEV_MODE = true;
-        public const ToolEnum.Tools TOOL = ToolEnum.Tools.MatrixTool;
-
+        public static bool devMode = true;
+        public static ToolEnum.Tools Tool = ToolEnum.Tools.BitwiseTool;
     }
 }

@@ -29,12 +29,10 @@ namespace sudoku.Classes
             Screen.BoardDown(Max);
         }
 
-        //This guy should be able to read all the inputs and store them as a 2d matrix
         public void ReadInput()
         {
             PrintEmpty();
 
-            //Matrix positions
             int x = 0;
             int y = 0;
 
@@ -42,7 +40,7 @@ namespace sudoku.Classes
             ConsoleKeyInfo key;
 
             Console.WriteLine("Give me a Sudoku and I'll solve it\n\nArrow keys to move\nNumber keys to write\nBackspace to erase\nEnter to solve");
-            if (Settings.DEV_MODE) Console.WriteLine("'d' to load default sudoku");
+            if (Settings.devMode) Console.WriteLine("'d' to load default sudoku");
 
             while (!stop)
             {
@@ -72,7 +70,7 @@ namespace sudoku.Classes
                         Matrix[x, y] = 0;
                         break;
                     case "D":
-                        if (Settings.DEV_MODE && Max == 9)
+                        if (Settings.devMode && Max == 9)
                         {
                             Matrix = MatrixHelper.GetSampleSudoku();
                             WriteGrid();
@@ -172,7 +170,6 @@ namespace sudoku.Classes
             }
         }
 
-        //This one helps you to jump between cells.
         static int Move(bool add, int c, int max)
         {
             int n = (add) ? c + 1 : c - 1;

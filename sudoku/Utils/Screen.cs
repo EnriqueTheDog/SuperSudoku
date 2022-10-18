@@ -13,7 +13,7 @@ namespace sudoku.Utils
             Console.SetCursorPosition(0, CToGrid(max, false));
         }
 
-        //Translate matrix cursor position to screen positions
+        //Translates matrix cursor position to screen positions
         public static int CToGrid(int cp, bool x)
         {
             cp = cp + cp + 1;
@@ -21,6 +21,7 @@ namespace sudoku.Utils
         }
         public static void PrintTitle()
         {
+            Console.Clear();
             Console.WriteLine(" ________                          ________      _________     ______         ");
             Console.WriteLine(" __  ___/___  _______________________  ___/___  _______  /________  /_____  __");
             Console.WriteLine(" _____ \\_  / / /__  __ \\  _ \\_  ___/____ \\_  / / /  __  /_  __ \\_  //_/  / / /");

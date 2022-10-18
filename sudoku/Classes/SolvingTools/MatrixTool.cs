@@ -84,7 +84,6 @@ namespace sudoku.Classes.SolvingTools
             return mat;
         }
 
-        //Setting by column. Works like the row setting but with current column
         private int[,,] SetCellByCol(int[,,] mat, int x, int y)
         {
             for (int i = 0; i < Math.Cbrt(mat.Length); i++)
@@ -94,7 +93,6 @@ namespace sudoku.Classes.SolvingTools
             return mat;
         }
 
-        //Setting by quadrant
         private int[,,] SetCellByQuad(int[,,] mat, int x, int y)
         {
             int quadLength = LocateQuad(mat, -1);
@@ -117,16 +115,13 @@ namespace sudoku.Classes.SolvingTools
         //Checking -- With the same logic as Set, Check looks for possibles that aren't repeated in a whole row, column or quadrant
         //This is done separatedly from Sets cuz while Sets go once per cell, Checks go only once for row, column or quadrant, and they affect every cell in them. It also must be placed after Sets
 
-        //Checking row
         private int[,,] CheckRow(int[,,] mat, int y)
         {
-            //Each possible number
             for (int n = 0; n < Math.Cbrt(mat.Length); n++)
             {
                 int single = 0;
                 int count = 0;
 
-                //Each cell
                 for (int c = 0; c < Math.Cbrt(mat.Length); c++)
                 {
                     if (mat[c, y, n] == 1)
@@ -142,13 +137,11 @@ namespace sudoku.Classes.SolvingTools
 
         private int[,,] CheckCol(int[,,] mat, int x)
         {
-            //Each possible number
             for (int n = 0; n < Math.Cbrt(mat.Length); n++)
             {
                 int single = 0;
                 int count = 0;
 
-                //Each cell
                 for (int c = 0; c < Math.Cbrt(mat.Length); c++)
                 {
                     if (mat[x, c, n] == 1)
@@ -168,16 +161,13 @@ namespace sudoku.Classes.SolvingTools
             int quadX = LocateQuad(mat, x);
             int quadY = LocateQuad(mat, y);
 
-            //each possible number
             for (int n = 0; n < Math.Cbrt(mat.Length); n++)
             {
                 int singleX = 0;
                 int singleY = 0;
                 int count = 0;
-                //Each quadrant column
                 for (int c = quadX; c < quadX + quadLength; c++)
                 {
-                    //Each quadrant row
                     for (int i = quadY; i < quadY + quadLength; i++)
                     {
                         if (mat[c, i, n] == 1)
